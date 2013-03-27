@@ -25,8 +25,16 @@ x. i'v been using pry alot to debug, so would like to give credit where credit i
 I have only mashed up these to create a server, Spotiserv: https://github.com/SebastianThorn/Spotiserv
 To start the server, simply type './start' in a linux console that have ruby, libspotify and the required gems.
 
+The server anwsers to the following HTTP-GET requests:
+  * /add/<USER>/<SPOTIFY-URI>
+  * /add/Sebastian/spotify:track:648j5ND8kMFMYXUGMWs5KP
+  * / (this returns a html-page with an ajax-request that pulls and generates the table)
+  * /queue.xml (this returns the xml with the playlist)
+
+
 TODO's
 ======
+  * This weekend im also planning on making an android-application to work as client for the server
   * Add some sort of pause/play-toogle to the webserver
   * Comment the code
   * Add a Gemfile
