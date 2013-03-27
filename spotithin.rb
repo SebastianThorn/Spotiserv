@@ -11,25 +11,6 @@ class SpotiThin
   def initialize (port, playlist, sp)
 
     ip = Socket.ip_address_list[1].ip_address
-    # Some exampels
-    puts """Staring server at: http://#{ip}:#{port}
-    queue.xml: http://#{ip}:#{port}/queue.xml
-    Song 01: http://#{ip}:#{port}/add/Johan/spotify:track:4eNnqcB8gO1rW1K5PTFahs
-    Song 02: http://#{ip}:#{port}/add/AndreasC/spotify:track:6h1Wkcm9qz79Xt1Qnp4n4A
-    Song 03: http://#{ip}:#{port}/add/AndreasK/spotify:track:3LI4MmibTkXH5cGpCGZgyw
-    Song 04: http://#{ip}:#{port}/add/Johan/spotify:track:4a8ZMNLB75047bY2I7oABt
-    Song 05: http://#{ip}:#{port}/add/Thorn/spotify:track:4wIyDHaiXJVYlbusOg3Ldf
-    Song 06: http://#{ip}:#{port}/add/Wadell/spotify:track:6UV7opcCk0XqqHePWvY0io
-    Song 07: http://#{ip}:#{port}/add/Olle/spotify:track:648j5ND8kMFMYXUGMWs5KP
-    Song 08: http://#{ip}:#{port}/add/Olle/spotify:track:56NkIxSZZiMpFP5ZNSxtnT
-    Song 09: http://#{ip}:#{port}/add/Johan/spotify:track:2Gb7BLy6eX1bEuiJqxP3Sy
-    Song 10: http://#{ip}:#{port}/add/Thorn/spotify:track:3cOoG6DKREfhlQ2kKtYmk8
-    Song 11: http://#{ip}:#{port}/add/Peter/spotify:track:1tQ5TSr1tyeQUbHKBee0jv
-    Song 12: http://#{ip}:#{port}/add/Adde/spotify:track:4Ld00UQYL3aPcK4yOnv0JP
-    Song 13: http://#{ip}:#{port}/add/Kungen/spotify:track:1ky5BfVWOURVyXEPNsjQTY
-    Song 14: http://#{ip}:#{port}/add/Stenson/spotify:track:1GwdUrz7DujSedNxnzVfqI
-    Song 15: http://#{ip}:#{port}/add/Kohler/spotify:track:47KVHb6cOVBZbmXQweE5p7"""
-
     puts "Starting thin, webserber"
     Thin::Server.start('0.0.0.0', port) do
       use Rack::CommonLogger

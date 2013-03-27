@@ -61,33 +61,6 @@ class SpotiPlay
 
     session2 = Hallon::Session.instance
     self.player = Hallon::Player.new(Hallon::OpenAL)
-
-
-  end
-
-  def help
-    puts """
-##################
-# SPOTISERV HELP #
-##################
-
-Variables, these are only here for debugging purposes only. They dont need to be public.
-> Spotiserv.playlist
-  This is an Array of hashes that has two keys, one is the track and the other is the name of the user that queued the track.
-  => [{:track=>Hallon::Track, :user=>String}, ..]
-
-> Spotiserv.status
-  Keeps track of the state for Hallon::Player, so the server knows if it should call the play function after a song is added to the playlist.
-  => true/false
-
-
-    self.session = Hallon::Session.instance
-    self.player = Hallon::Player.new(Hallon::OpenAL)
-    self.playlist = []
-
-
-
-"""
   end
 
   #TODO: INFO, Remove console output
