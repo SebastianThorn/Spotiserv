@@ -25,6 +25,11 @@ x. i'v been using pry alot to debug, so would like to give credit where credit i
 I have only mashed up these to create a server, Spotiserv: https://github.com/SebastianThorn/Spotiserv
 To start the server, simply type './start' in a linux console that have ruby, libspotify and the required gems.
 
+TODO's
+======
+
+*Add some sort of pause/play-toogle to the webserver
+*Comment the code
 
 Disclaimer
 ==========
