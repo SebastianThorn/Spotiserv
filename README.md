@@ -27,9 +27,9 @@ To start the server, simply type './start' in a linux console that have ruby, li
 
 TODO's
 ======
-
-*Add some sort of pause/play-toogle to the webserver
-*Comment the code
+  * Add some sort of pause/play-toogle to the webserver
+  * Comment the code
+  * Add a Gemfile
 
 Disclaimer
 ==========
