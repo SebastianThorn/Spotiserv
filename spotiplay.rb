@@ -5,14 +5,14 @@ require "hallon"
 require "hallon-openal"
 
 class SpotiPlay
-  attr_accessor :player, :playlist
-
+  attr_accessor :player, :playlist, :local_playlist
+  
   def initialize (username, password)
     # Setting up variables
     playing = false
-    #require_relative "login.rb"
     self.playlist = []
-
+    self.local_playlist = Time.new.strftime('%Y-%m-%d.txt')
+    
     # This is a quick sanity check, to make sure we have all the necessities in order.
     appkey_path = File.expand_path('./spotify_appkey.key')
     unless File.exists?(appkey_path)
@@ -27,8 +27,8 @@ class SpotiPlay
       https://developer.spotify.com/en/libspotify/application-key/
       ERROR
     end
-    hallon_appkey   = IO.read(appkey_path)
-
+    hallon_appkey = IO.read(appkey_path)
+    
     # Make sure the credentials are there. We don’t want to go without them.
     if username.empty? or password.empty?
       abort <<-ERROR
@@ -38,8 +38,6 @@ class SpotiPlay
   ERROR
     end
     
-
-
     session = Hallon::Session.initialize(hallon_appkey) do
       on(:log_message) do |message|
         puts "[LOG] #{message}"
@@ -58,8 +56,7 @@ class SpotiPlay
       end
     end
     session.login!(username, password)
-
-    session2 = Hallon::Session.instance
+    
     self.player = Hallon::Player.new(Hallon::OpenAL)
   end
 
@@ -118,6 +115,11 @@ class SpotiPlay
   def add_to_playlist (item)
     self.playlist.push (item)
     "Added #{item[:track].name} to the playlist!"
+
+    File.open("tmp/" + self.local_playlist, "a") do |f|
+      f.write (item[:track].name + " - " +  item[:track].artist.name + "\n")
+    end
+    
     unless self.player.status == :playing
       p_play (self.playlist.first[:track])
     end

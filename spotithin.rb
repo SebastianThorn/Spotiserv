@@ -8,11 +8,10 @@ require "active_support/core_ext"
 
 class SpotiThin
 
-  def initialize (port, playlist, sp)
+  def initialize (ip, port, sp)
 
-    ip = Socket.ip_address_list[1].ip_address
-    puts "Starting thin, webserber"
-    Thin::Server.start('0.0.0.0', port) do
+    puts "Starting thin, webserber on: http://" + ip + ":" + port.to_s
+    Thin::Server.start(ip, port) do
       use Rack::CommonLogger
       
       # /add, to add a song to the playlist: /add/<user-code>/<spotify-uri>
@@ -22,7 +21,7 @@ class SpotiThin
       
       # /queue.xml, the ajax request from the browser
       map "/queue.xml" do
-        run Queue.new playlist
+        run Queue.new sp.playlist
       end
       
       # / and /index.html, to inform how the api works, nothing more
