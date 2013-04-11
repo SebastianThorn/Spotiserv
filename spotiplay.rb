@@ -66,7 +66,6 @@ class SpotiPlay
       puts "Playing: #{track.name} by #{track.artist.name}"
       self.player.play!(track)
       puts "Song ended: #{track.name} by #{track.artist.name}"
-      puts "Removing from playlist.."
       self.playlist.shift
       if self.playlist.empty?
         puts "No more songs in playlist, stopping player"
@@ -78,7 +77,7 @@ class SpotiPlay
     }
   end
 
-  #TODO: INFO, Remove console output
+  # Play the next song in the playlist
   def p_next
     unless self.playlist.empty?
       if self.playing
@@ -112,14 +111,13 @@ class SpotiPlay
     end
   end
   
+  # Adds a track to the current playlist, takes a hash. {:track=>Hallon::Track, :user=>String}
   def add_to_playlist (item)
     self.playlist.push (item)
     "Added #{item[:track].name} to the playlist!"
-
     File.open("tmp/" + self.local_playlist, "a") do |f|
       f.write (item[:track].name + " - " +  item[:track].artist.name + "\n")
     end
-    
     unless self.player.status == :playing
       p_play (self.playlist.first[:track])
     end
