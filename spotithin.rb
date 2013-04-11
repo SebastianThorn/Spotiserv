@@ -42,7 +42,6 @@ class SpotiThin
     end
 
     def call(env)
-      # request-path
       rp = env["PATH_INFO"]
       puts env["HTTP_USER_AGENT"]
       puts "Addsong"
@@ -52,7 +51,8 @@ class SpotiThin
       puts "Track: " + track_uri
       track = Hallon::Track.new(track_uri).load
       @sp.add_to_playlist ({:track => track, :user => user})
-      xml = {:command=>"add", :track=>track.name, :artist=>track.artist.name, :album=>track.album.name, :user=>user}.to_xml
+      xml = {:command=>"add", :track=>track.name, :artist=>track.artist.name,
+        :album=>track.album.name, :user=>user}.to_xml
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
@@ -76,11 +76,8 @@ class SpotiThin
 
     def call(env)
       xmlArray = []
-      @playlist.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name,
-                                                      :song=>item[:track].name,
-                                                      :album=>item[:track].album.name,
-                                                      :user=>item[:user],
-                                                      :unit=>"N/A"})}
+      @playlist.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
+                                                      :album=>item[:track].album.name, :user=>item[:user], :unit=>"N/A"})}
       xml = xmlArray.to_xml(:root => "item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
     end
