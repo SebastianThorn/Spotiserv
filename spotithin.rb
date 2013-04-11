@@ -21,16 +21,19 @@ class SpotiThin
       
       # /queue.xml, the ajax request from the browser
       map "/queue.xml" do
-        run Queue.new sp.playlist
+        run Queue_song.new sp.playlist
+      end
+
+      map "/next" do
+        run Next_song.new sp
       end
       
-      # / and /index.html, to inform how the api works, nothing more
+      # / and /index.html, page with js that loads the xml-file every 3rd second.
       map "/" do
         run Index.new
       end
       
     end
-
   end
   
   class Add_song
@@ -49,23 +52,24 @@ class SpotiThin
       puts "Track: " + track_uri
       track = Hallon::Track.new(track_uri).load
       @sp.add_to_playlist ({:track => track, :user => user})
-      message = "#{track.name} - #{track.artist.name}, has been loaded into the playlist."
-      html = %%<!DOCTYPE html>
-<html>
-  <head>
-    <title>Spotiserv, add to queue</title>
-  </head>
-  <body style="background-color:black;color:white;margin-left:50px">
-    #{message}
-  </body>
-</html>
-%
-        [200, {'Content-Type'=>'text/html'}, [html]]
+      xml = {:command=>"add", :track=>track.name, :artist=>track.artist.name, :album=>track.album.name, :user=>user}.to_xml
+      [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
 
+  class Next_song
+    def initialize (sp)
+      @sp = sp
+    end
 
-  class Queue
+    def call(env)
+      @sp.p_next
+      xml = {:command=>"next"}.to_xml
+      [200, {'Content-Type'=>'text/xml'}, [xml]]
+    end
+  end
+
+  class Queue_song
     def initialize (playlist)
       @playlist = playlist
     end
@@ -73,10 +77,10 @@ class SpotiThin
     def call(env)
       xmlArray = []
       @playlist.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name,
-                                             :song=>item[:track].name,
-                                             :album=>item[:track].album.name,
-                                             :user=>item[:user],
-                                             :unit=>"N/A"})}
+                                                      :song=>item[:track].name,
+                                                      :album=>item[:track].album.name,
+                                                      :user=>item[:user],
+                                                      :unit=>"N/A"})}
       xml = xmlArray.to_xml(:root => "item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
     end
@@ -200,6 +204,5 @@ class SpotiThin
       [200, {"Content-Type"=>"text/html"}, [html]]
     end
   end
-
 
 end

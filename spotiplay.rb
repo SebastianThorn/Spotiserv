@@ -5,11 +5,11 @@ require "hallon"
 require "hallon-openal"
 
 class SpotiPlay
-  attr_accessor :player, :playlist, :local_playlist
+  attr_accessor :player, :playlist, :local_playlist, :playing
   
   def initialize (username, password)
     # Setting up variables
-    playing = false
+    self.playing = false
     self.playlist = []
     self.local_playlist = Time.new.strftime('%Y-%m-%d.txt')
     
@@ -81,7 +81,9 @@ class SpotiPlay
   def p_next
     unless self.playlist.empty?
       if self.playing
-        "Next song"
+        puts "Next song"
+        self.playlist.shift
+        self.p_play (self.playlist.first[:track])
       else
         puts "player is not playing a song right now, starting playback"
         self.playing = true
@@ -119,7 +121,7 @@ class SpotiPlay
       f.write (item[:track].name + " - " +  item[:track].artist.name + "\n")
     end
     unless self.player.status == :playing
-      p_play (self.playlist.first[:track])
+      self.p_play (self.playlist.first[:track])
     end
   end
 
