@@ -48,16 +48,15 @@ How to run on RPi, raspberrian (Soft-float!)
   * git clone https://github.com/SebastianThorn/Spotiserv.git
   * cd Spotiserv/
 
-Now you need to download the key-file from spotify.
-You can get it here: http://developer.spotify.com/technologies/libspotify/
-Place it in ~/Git/Spotiserv/
-Now you should be good to go with the server on a RPi running Raspbian.
+Now you need to download the key-file from spotify, you can get it here: http://developer.spotify.com/technologies/libspotify/
+
+Place it in ~/Git/Spotiserv/ Now you should be good to go with the server on a RPi running Raspbian.
 
 ./start.rb [<username> [<password]]
 
 Now it's time to play some good music!
 
-http://<ip>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh
+http://IP/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh
 
 
 TODO's
