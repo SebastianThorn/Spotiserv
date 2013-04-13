@@ -26,10 +26,11 @@ I have only mashed up these to create a server, Spotiserv: https://github.com/Se
 To start the server, simply type './start' in a linux console that have ruby, libspotify and the required gems.
 
 The server anwsers to the following HTTP-GET requests:
-  * /add/<USER>/<SPOTIFY-URI>
-  * /add/Sebastian/spotify:track:648j5ND8kMFMYXUGMWs5KP
-  * / (this returns a html-page with an ajax-request that pulls and generates the table)
-  * /queue.xml (this returns the xml with the playlist)
+  * `/add/<USER>/<SPOTIFY-TRACK-URI>` Returns an xml-file if successful, and adds the track to the URI to the playlist.
+  * example: `192.168.0.189:8001/add/Sebastian/spotify:track:648j5ND8kMFMYXUGMWs5KP`
+  * `/` Returns an html-page that renders the playlist into a table and populates it with the data from `/queue.xml`
+  * `/queue.xml` Returns the current playlist as an xml-file
+  * `/next` Returns an xml-file if successful, and changes the current track to the next in the playlist.
 
 
 How to run on RPi, raspberrian (Soft-float!)
@@ -52,11 +53,11 @@ Now you need to download the key-file from spotify, you can get it here: http://
 
 Place it in ~/Git/Spotiserv/ Now you should be good to go with the server on a RPi running Raspbian.
 
-./start.rb [username [password]]
+`./start.rb [<username> [<password>]]`
 
 Now it's time to play some good music!
 
-http://IP/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh
+`http://<IP>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh`
 
 INFO: Console output seems to be quite heave on the PRi, not sure how to fix this yet.
 
