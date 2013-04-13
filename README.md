@@ -52,7 +52,7 @@ Now you need to download the key-file from spotify, you can get it here: http://
 
 Place it in ~/Git/Spotiserv/ Now you should be good to go with the server on a RPi running Raspbian.
 
-./start.rb [<username> [<password]]
+./start.rb [username [password]]
 
 Now it's time to play some good music!
 
