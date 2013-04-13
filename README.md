@@ -58,6 +58,7 @@ Now it's time to play some good music!
 
 http://IP/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh
 
+INFO: Console output seems to be quite heave on the PRi, not sure how to fix this yet.
 
 TODO's
 ======
