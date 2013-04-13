@@ -32,6 +32,34 @@ The server anwsers to the following HTTP-GET requests:
   * /queue.xml (this returns the xml with the playlist)
 
 
+How to run on RPi, raspberrian (Soft-float!)
+============================================
+  * sudo apt-get update
+  * sudo apt-get upgrade
+  * sudo apt-get install ruby1.9.1-dev git-core libopenal-dev
+  * wget http://developer.spotify.com/download/libspotify/libspotify-12.1.51-Linux-armv6-release.tar.gz
+  * tar xvf libspotify-12.1.51-Linux-armv6-release.tar.gz
+  * cd libspotify-12.1.51-Linux-armv6-release/
+  * sudo make prefix=/usr/local install
+  * cd ~
+  * sudo gem install --no-ri --no-rdoc hallon hallon-openal thin active_support pry i18n builder
+  * mkdir Git
+  * cd Git/
+  * git clone https://github.com/SebastianThorn/Spotiserv.git
+  * cd Spotiserv/
+
+Now you need to download the key-file from spotify.
+You can get it here: http://developer.spotify.com/technologies/libspotify/
+Place it in ~/Git/Spotiserv/
+Now you should be good to go with the server on a RPi running Raspbian.
+
+./start.rb [<username> [<password]]
+
+Now it's time to play some good music!
+
+http://<ip>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh
+
+
 TODO's
 ======
   * This weekend im also planning on making an android-application to work as client for the server
