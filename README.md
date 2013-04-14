@@ -62,15 +62,14 @@ Now it's time to play some good music!
 
 `http://<IP:PORT>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh`
 
-INFO: Console output seems to be quite heave on the PRi, not sure how to fix this yet.
-
 TODO's
 ======
   * Add some sort of pause/play-toogle to the webserver
   * Comment the code
   * Add a Gemfile
 
-Disclaimer
+Known Issues
 ==========
-  * While running this on RPi, you might have some playback issues.
-  * There seems to be aome issues with spotify-accounts linked to facebook (needs verification)
+  * While running this on RPi, you might have some playback issues, and might stop at some times.
+  * There seems to be aome issues with spotify-accounts linked to facebook (needs verification).
+  * IE will cache the xml-file, and therefore wont display the playlist at the index-page.
