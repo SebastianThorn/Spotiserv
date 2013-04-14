@@ -3,6 +3,9 @@ Spotiserv
 
 Hello, and welcome to Spotiserv.
 
+![Alt text](http://i.imgur.com/1Zlw0sK.png "Optional title")
+
+
 You will need a couple of things to make this work proper:
   * A Premium Spotify-account
   * An application key (get one here: https://developer.spotify.com/technologies/libspotify/ )
