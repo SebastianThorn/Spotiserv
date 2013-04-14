@@ -70,4 +70,5 @@ TODO's
 
 Disclaimer
 ==========
-While running this on RPi, you might have some playback issues.
+  * While running this on RPi, you might have some playback issues.
+  * There seems to be aome issues with spotify-accounts linked to facebook (needs verification)
