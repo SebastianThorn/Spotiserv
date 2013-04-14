@@ -57,13 +57,12 @@ Place it in ~/Git/Spotiserv/ Now you should be good to go with the server on a R
 
 Now it's time to play some good music!
 
-`http://<IP>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh`
+`http://<IP:PORT>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh`
 
 INFO: Console output seems to be quite heave on the PRi, not sure how to fix this yet.
 
 TODO's
 ======
-  * This weekend im also planning on making an android-application to work as client for the server
   * Add some sort of pause/play-toogle to the webserver
   * Comment the code
   * Add a Gemfile
