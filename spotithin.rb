@@ -3,14 +3,18 @@
 
 # This is a webserver that is suppose to handle incomming requests for Spotiserv
 
+# Requirements
 require "thin"
 require "active_support/core_ext"
 
+# Web-server that sends requests to the player-server, and sends info the users
 class SpotiThin
 
+  # Starting server, takes: ip, port and player-server (SpotiPlay)
   def initialize (ip, port, sp)
-
     puts "Starting thin, webserber on: http://" + ip + ":" + port.to_s
+
+    # Registrates the resources for the web-server
     Thin::Server.start(ip, port) do
       use Rack::CommonLogger
       
@@ -19,11 +23,17 @@ class SpotiThin
         run Add_song.new sp
       end
       
+      # /playlist, set a playlist: /playlist/<spotify-uri>
+      map "/playlist" do
+        run Playlist.new sp
+      end
+
       # /queue.xml, the ajax request from the browser
       map "/queue.xml" do
         run Queue_song.new sp.playlist
       end
 
+      # /next, skips the current song and starts the next instead
       map "/next" do
         run Next_song.new sp
       end
@@ -36,11 +46,13 @@ class SpotiThin
     end
   end
   
+  # Resource that reads a user and a sporify-uri, and adds this to the playlist of the play-server.
   class Add_song
     def initialize (sp)
       @sp = sp
     end
-
+    
+    # TODO: remove some of the console-output
     def call(env)
       rp = env["PATH_INFO"]
       puts env["HTTP_USER_AGENT"]
@@ -65,6 +77,23 @@ class SpotiThin
     def call(env)
       @sp.p_next
       xml = {:command=>"next"}.to_xml
+      [200, {'Content-Type'=>'text/xml'}, [xml]]
+    end
+  end
+
+  class Playlist
+    def initialize (sp)
+      @sp = sp
+    end
+    
+    def call(env)
+      rp = env["PATH_INFO"]
+      puts "Playlist"
+      puts "rp: #{rp}"
+      playlist = rp.match(/^\/(.*)/)[1]
+      puts "Playlist: " + playlist
+      @sp.external_playlist = Hallon::Playlist.new(playlist).load
+      xml = {:command=>"playlist", :playlist=>playlist}.to_xml
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
@@ -163,6 +192,7 @@ class SpotiThin
       head = %%
     <title>SpotiServ, Playlist</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
     <link href='http://fonts.googleapis.com/css?family=Merriweather+Sans:400,700,800' rel='stylesheet' type='text/css'>
 %
 
