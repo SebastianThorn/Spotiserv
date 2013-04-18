@@ -5,13 +5,14 @@ require "hallon"
 require "hallon-openal"
 
 class SpotiPlay
-  attr_accessor :player, :playlist, :local_playlist, :playing
-  
+  attr_accessor :player, :playlist, :playing, :external_playlist, :local_playlist
+
   def initialize (username, password)
     # Setting up variables
     self.playing = false
     self.playlist = []
     self.local_playlist = Time.new.strftime('%Y-%m-%d.txt')
+    self.external_playlist = nil
     
     # This is a quick sanity check, to make sure we have all the necessities in order.
     appkey_path = File.expand_path('./spotify_appkey.key')
@@ -31,11 +32,7 @@ class SpotiPlay
     
     # Make sure the credentials are there. We don’t want to go without them.
     if username.empty? or password.empty?
-      abort <<-ERROR
-    Sorry, you must supply both username and password for Hallon to be able to log in.
-
-    You may also edit examples/common.rb by setting your username and password directly.
-  ERROR
+      abort "Sorry, you must supply both username and password for Hallon to be able to log in."
     end
     
     session = Hallon::Session.initialize(hallon_appkey) do
@@ -68,11 +65,17 @@ class SpotiPlay
       puts "Song ended: #{track.name} by #{track.artist.name}"
       self.playlist.shift
       if self.playlist.empty?
-        puts "No more songs in playlist, stopping player"
+        puts "No more songs in playlist, trying to open external playlist"
+        unless self.external_playlist.nil?
+          puts "No more songs in playlist, playing random song from external playlist"
+          self.p_play (self.external_playlist.tracks[rand(self.external_playlist.tracks.size)])
+        else
+          puts "else"
+        end
         self.player.stop
       else
         puts "Starting nex song"
-        p_play (self.playlist.first[:track])
+        self.p_play (self.playlist.first[:track])
       end
     }
   end
