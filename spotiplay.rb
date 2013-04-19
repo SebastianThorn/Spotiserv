@@ -97,6 +97,17 @@ class SpotiPlay
     end
   end
 
+  def set_playlist (playlist = null)
+    puts "Spotithin.set_playlist"
+    if playlist
+      self.playing = true
+      self.external_playlist = playlist
+      self.p_play (self.external_playlist.tracks[rand(self.external_playlist.tracks.size)])
+    else
+      self.playing = false
+    end
+  end
+
   def p_pause
     self.player.pause
   end

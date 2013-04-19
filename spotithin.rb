@@ -87,13 +87,14 @@ class SpotiThin
     end
     
     def call(env)
+      puts "SpotiThin.Thin.Playlist"
       rp = env["PATH_INFO"]
-      puts "Playlist"
       puts "rp: #{rp}"
-      playlist = rp.match(/^\/(.*)/)[1]
-      puts "Playlist: " + playlist
-      @sp.external_playlist = Hallon::Playlist.new(playlist).load
-      xml = {:command=>"playlist", :playlist=>playlist}.to_xml
+      playlist_uri = rp.match(/^\/(.*)/)[1]
+      puts "Playlist: " + playlist_uri
+      playlist = Hallon::Playlist.new(playlist_uri).load
+      @sp.set_playlist(playlist)
+      xml = {:command=>"playlist", :playlist=>playlist.name}.to_xml
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
