@@ -23,6 +23,11 @@ class SpotiThin
         run Add_song.new sp
       end
       
+      # TODO add comment
+      map "/add_album" do
+        run Add_album.new sp
+      end
+      
       # /playlist, set a playlist: /playlist/<spotify-uri>
       map "/playlist" do
         run Playlist.new sp
@@ -81,6 +86,30 @@ class SpotiThin
     end
   end
 
+  class Add_album
+    
+    def initialize (sp)
+      @sp = sp
+    end
+    
+    # TODO: remove some of the console-output
+    def call(env)
+      rp = env["PATH_INFO"]
+      puts env["HTTP_USER_AGENT"]
+      puts "SptiThin.Thin.Add_album, rp: #{rp}"
+      user, album_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
+      puts "User: " + user
+      puts "Album: " + album_uri
+      albumBrowse = Hallon::Album.new(album_uri).browse.load
+      for track in albumBrowse.tracks
+        @sp.add_to_playlist ({:track => track, :user => user})
+      end
+      xml = {:command=>"add_album", :track=>track.name, :artist=>track.artist.name,
+        :album=>track.album.name, :user=>user}.to_xml
+      [200, {'Content-Type'=>'text/xml'}, [xml]]
+    end
+  end
+  
   class Playlist
     def initialize (sp)
       @sp = sp
