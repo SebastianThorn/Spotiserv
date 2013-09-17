@@ -4,7 +4,6 @@
 # Requirements
 require_relative "spotiplay.rb"
 require_relative "spotithin.rb"
-require "pry"
 require "parseconfig"
 require "geocoder"
 require "open-uri"
