@@ -15,34 +15,54 @@ class SpotiThin
     puts "Starting thin, webserber on: http://" + ip + ":" + port.to_s
 
     # Registrates the resources for the web-server
+    # All commands will be responded with an xml-file with information if they were a success or not.
     Thin::Server.start(ip, port) do
       use Rack::CommonLogger
       
-      # /add, to add a song to the playlist: /add/<user-code>/<spotify-uri>
+      # Request: /add, to add a song to the playlist
+      # /<udi>/add/<spotify-uri>
+      # e.g. http://music.example.com/HXaIBXjI/add/spotify:track:2OcieDHRpksQQpIuQCOwPs
+      # Response: ok/err/auth/priv
       map "/add" do
         run Add_song.new sp
       end
       
-      # TODO add comment
+      # ! NOT IMPLEMENTED YET !
+      # Request: /add_album, to add an entire album to the playlist
+      # /<uid>/add_album/<spotify-uri>
+      # e.g. http://music.example.com/jimmQEEp/add_album/spotify:album:4UjcMSiyv8QCiZ4O8gpzXS
+      # Response: ok/err/auth/priv
       map "/add_album" do
         run Add_album.new sp
       end
       
-      # /playlist, set a playlist: /playlist/<spotify-uri>
+      # ! DOES NOT WORK 100% !
+      # Request: /playlist, set a playlist to play when there is no tracks in the local playlist, if no uri is sent, server will remove the current playlist
+      # /<uid>/playlist/[spotify-uri]
+      # e.g. http://music.example.com/pqMoOjUe/playlist/spotify:user:badgersweden:playlist:4B95CO3FINr1jH2okewLAY
+      # e.g. http://music.example.com/pqMoOjUe/playlist
+      # Response: ok/err/auth/priv
       map "/playlist" do
         run Playlist.new sp
       end
 
-      # /remove, remove a song from the playlist: /remove/<index>
+      # ! NOT IMPLEMENTED YET !
+      # Request: /remove, remove a song from the playlist if you queued the track or if you are admin
+      # /<uid>/remove/<index>
+      # e.g. http://music.example.com/GprIrgRs/remove/23
+      # Respone: ok/err/auth/priv
       map "/remove" do
         run Remove.new sp.playlist
       end
 
-      # /queue.xml, the ajax request from the browser
+      # Request: /queue.xml, the ajax request from the browser
+      # e.g http://music.example.com/queue.xml
+      # See syntax.txt for xml-syntax
       map "/queue.xml" do
         run Get_queue.new sp
       end
 
+      # ! DOES NOT WORK !
       # /next, skips the current song and starts the next instead.
       map "/next" do
         run Next_song.new sp
@@ -54,11 +74,12 @@ class SpotiThin
       end
 
       # /get, sends files back to the agent, such as css/javascript/images
+      # e.g. http://music.example.com/get/css/main.css
       map "/get" do
         run Get_file.new
       end
       
-      # / and /index.html, page with js that loads the xml-file every 3rd second.
+      # / and /index.html, page with js that loads the xml-file.
       map "/" do
         run Index.new
       end
