@@ -33,14 +33,29 @@ class SpotiThin
         run Playlist.new sp
       end
 
-      # /queue.xml, the ajax request from the browser
-      map "/queue.xml" do
-        run Queue_song.new sp.playlist
+      # /remove, remove a song from the playlist: /remove/<index>
+      map "/remove" do
+        run Remove.new sp.playlist
       end
 
-      # /next, skips the current song and starts the next instead
+      # /queue.xml, the ajax request from the browser
+      map "/queue.xml" do
+        run Get_queue.new sp
+      end
+
+      # /next, skips the current song and starts the next instead.
       map "/next" do
         run Next_song.new sp
+      end
+
+      # /phone, sends a html5-page depending on your phone and resolution, the page pulls the xml-file with javascript.
+      map "/phone" do
+        run Phone.new
+      end
+
+      # /get, sends files back to the agent, such as css/javascript/images
+      map "/get" do
+        run Get_file.new
       end
       
       # / and /index.html, page with js that loads the xml-file every 3rd second.
@@ -60,14 +75,16 @@ class SpotiThin
     # TODO: remove some of the console-output
     def call(env)
       rp = env["PATH_INFO"]
+      ip = env["REMOTE_ADDR"]
       puts env["HTTP_USER_AGENT"]
       puts "Addsong"
       puts "rp: #{rp}"
       user, track_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
       puts "User: " + user
+      puts "IP: " + ip
       puts "Track: " + track_uri
       track = Hallon::Track.new(track_uri).load
-      @sp.add_to_playlist ({:track => track, :user => user})
+      @sp.add_to_playlist ({:track => track, :user => user, :ip => ip})
       xml = {:command=>"add", :track=>track.name, :artist=>track.artist.name,
         :album=>track.album.name, :user=>user}.to_xml
       [200, {'Content-Type'=>'text/xml'}, [xml]]
@@ -80,7 +97,7 @@ class SpotiThin
     end
 
     def call(env)
-      @sp.p_next
+      @sp.new_next
       xml = {:command=>"next"}.to_xml
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
@@ -95,14 +112,16 @@ class SpotiThin
     # TODO: remove some of the console-output
     def call(env)
       rp = env["PATH_INFO"]
+      ip = env["REMOTE_ADDR"]
       puts env["HTTP_USER_AGENT"]
       puts "SptiThin.Thin.Add_album, rp: #{rp}"
       user, album_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
       puts "User: " + user
+      puts "IP: " + ip
       puts "Album: " + album_uri
       albumBrowse = Hallon::Album.new(album_uri).browse.load
       for track in albumBrowse.tracks
-        @sp.add_to_playlist ({:track => track, :user => user})
+        @sp.add_to_playlist ({:track => track, :user => user, :ip => ip})
       end
       xml = {:command=>"add_album", :track=>track.name, :artist=>track.artist.name,
         :album=>track.album.name, :user=>user}.to_xml
@@ -128,136 +147,63 @@ class SpotiThin
     end
   end
 
-  class Queue_song
+  class Remove
     def initialize (playlist)
       @playlist = playlist
     end
 
     def call(env)
+      puts "SpotiThin.Thin.Remove"
+      rp = env["PATH_INFO"]
+      puts "rp: #{rp}"
+      index = rp.match(/^\/(.*)/)[1]
+      puts "Index: " + index
+      @playlist[index.to_i][:status] = "removed"
+      xml = {:command=>"remove", :index=>index}.to_xml
+      [200, {'Content-Type'=>'text/xml'}, [xml]]
+    end
+  end
+
+  class Get_queue
+    def initialize (sp)
+      @sp = sp
+    end
+
+    def call(env)
       xmlArray = []
-      @playlist.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
-                                                      :album=>item[:track].album.name, :user=>item[:user], :unit=>"N/A"})}
+      @trunk = 5
+      if (@sp.index < @trunk)
+        @trunk = @sp.index
+      end
+      list = @sp.playlist.drop(@sp.index-@trunk).take(20)
+      list.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
+                                                      :album=>item[:track].album.name, :user=>item[:user],
+                                                      :unit=>"N/A", :status=>item[:status]})}
       xml = xmlArray.to_xml(:root => "item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
     end
   end
 
+  class Phone
+    def call(env)
+      agent = env["HTTP_USER_AGENT"]
+      # add some stuff here so we know what file to load
+      html = File.open("web/clients/iphone5.html").read
+      [200, {"Content-Type"=>"text/html"}, [html]]
+    end
+  end
+
+  class Get_file
+    def call(env)
+      rp = env["PATH_INFO"]
+      file = File.open("web/" + rp).read
+      [200, {"Content-Type"=>"text/html"}, [file]]
+    end
+  end
 
   class Index
     def call(env)
-      js = %?
-<script>
-    function loadQueues() {
-	var xmlhttp;
-	var txt,x,xx,i;
-	if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
-	    xmlhttp=new XMLHttpRequest();
-	} else {// code for IE6, IE5
-	    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-	}
-	xmlhttp.onreadystatechange=function() {
-	    if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-		txt="<table><tr><th>Artist</th><th>Track</th><th>Album</th><th>Name</th><th>Device</th></tr>";
-		x=xmlhttp.responseXML.documentElement.getElementsByTagName("item");
-		for (i=0;i<x.length;i++) {
-		    if (i%2 == 1)
-			txt=txt + "<tr>";
-		    else
-			txt=txt + "<tr class='alt'>";
-		    xx=x[i].getElementsByTagName("artist"); {
-			try {
-			    txt=txt + "<td>" + xx[0].firstChild.nodeValue + "</td>";
-			} catch (er) {
-			    txt=txt + "<td> </td>";
-			}
-                    }
-		    xx=x[i].getElementsByTagName("song"); {
-			try {
-			    txt=txt + "<td>" + xx[0].firstChild.nodeValue + "</td>";
-			} catch (er) {
-			    txt=txt + "<td> </td>";
-			}
-                    }
-		    xx=x[i].getElementsByTagName("album"); {
-			try {
-			    txt=txt + "<td>" + xx[0].firstChild.nodeValue + "</td>";
-			} catch (er) {
-			    txt=txt + "<td> </td>";
-			}
-                    }
-
-		    xx=x[i].getElementsByTagName("user"); {
-			try {
-			    txt=txt + "<td>" + xx[0].firstChild.nodeValue + "</td>";
-			} catch (er) {
-			    txt=txt + "<td> </td>";
-			}
-                    }
-		    xx=x[i].getElementsByTagName("unit"); {
-			try {
-			    txt=txt + "<td>" + xx[0].firstChild.nodeValue + "</td>";
-			} catch (er) {
-			    txt=txt + "<td> </td>";
-			}
-                    }
-
-		    txt=txt + "</tr>";
-		}
-		txt=txt + "</table>";
-		document.getElementById("queueInfo").innerHTML=txt;
-	    }
-        }
-	xmlhttp.open("GET","queue.xml",true);
-	xmlhttp.send();
-    }
-
-    function looper() {
-      setInterval(function(){loadQueues()},3000);
-    }
-
-    window.onload = looper;
-</script>
-    ?
-
-      head = %%
-    <title>SpotiServ, Playlist</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
-    <link href='http://fonts.googleapis.com/css?family=Merriweather+Sans:400,700,800' rel='stylesheet' type='text/css'>
-%
-
-      css = """
-    <style>
-      body {background-color:white; font-family: 'Merriweather Sans', sans-serif; font-weight: 700; font-size:175%;}
-      h1 {font-family: 'Merriweather Sans', sans-serif; font-weight: 800; font-size:300%;}
-      table {border-collapse:collapse;width:100%}
-      th, td {border: 2px solid #98bf21; padding:3px 7px 2px 7px;}
-      th {text-align:center; padding-top:5px; padding-bottom:4px; background-color:#A7C942; color:#ffffff;}
-      tr.alt td{color:#000000; background-color:#EAF2D3;}
-
-      #queueInfo {margin:40px;}
-    </style>
-"""
-
-      html = %%<!DOCTYPE html>
-<html>
-  <head>
-    #{head}
-    #{css}
-    #{js}
-  </head>
-  <body>
-    
-  <center>
-    <div id="head"><h1>SpotiServ, PlayQueue</h1></div>
-    <div id="queueInfo">
-    </div>
-  </center>
-    
-  </body>
-</html>
-%
-      
+      html = File.open("web/clients/fullhd.html").read
       [200, {"Content-Type"=>"text/html"}, [html]]
     end
   end
