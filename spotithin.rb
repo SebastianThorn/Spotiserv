@@ -11,8 +11,9 @@ require "active_support/core_ext"
 class SpotiThin
 
   # Starting server, takes: ip, port and player-server (SpotiPlay)
-  def initialize (ip, port, sp)
+  def initialize (ip, port, sp, command_privileges, user_hash)
     puts "Starting thin, webserber on: http://" + ip + ":" + port.to_s
+    char_map = [(0..9), ('a'..'z'), ('A'..'Z')].map { |i| i.to_a }.flatten
 
     # Registrates the resources for the web-server
     # All commands will be responded with an xml-file with information if they were a success or not.
@@ -20,52 +21,53 @@ class SpotiThin
       use Rack::CommonLogger
       
       # Request: /add, to add a song to the playlist
-      # /<udi>/add/<spotify-uri>
+      # /add/<uid>/<spotify-uri>
       # e.g. http://music.example.com/HXaIBXjI/add/spotify:track:2OcieDHRpksQQpIuQCOwPs
       # Response: ok/err/auth/priv
-      map "/add" do
-        run Add_song.new sp
+      map "/addtrack" do
+        run AddTrack.new sp, user_hash, command_privileges
       end
       
       # ! NOT IMPLEMENTED YET !
       # Request: /add_album, to add an entire album to the playlist
-      # /<uid>/add_album/<spotify-uri>
+      # /add_album/<uid>/<spotify-uri>
       # e.g. http://music.example.com/jimmQEEp/add_album/spotify:album:4UjcMSiyv8QCiZ4O8gpzXS
       # Response: ok/err/auth/priv
-      map "/add_album" do
-        run Add_album.new sp
+      map "/addalbum" do
+        run AddAlbum.new sp, user_hash, command_privileges
       end
       
       # ! DOES NOT WORK 100% !
-      # Request: /playlist, set a playlist to play when there is no tracks in the local playlist, if no uri is sent, server will remove the current playlist
-      # /<uid>/playlist/[spotify-uri]
+      # Request: /playlist, set a playlist to play when there is no tracks in the local playlist,
+      # if no uri is sent, server will remove the current playlist
+      # /playlist/<uid>/[spotify-uri]
       # e.g. http://music.example.com/pqMoOjUe/playlist/spotify:user:badgersweden:playlist:4B95CO3FINr1jH2okewLAY
       # e.g. http://music.example.com/pqMoOjUe/playlist
       # Response: ok/err/auth/priv
       map "/playlist" do
-        run Playlist.new sp
+        run Playlist.new sp, user_hash, command_privileges
       end
 
       # ! NOT IMPLEMENTED YET !
       # Request: /remove, remove a song from the playlist if you queued the track or if you are admin
-      # /<uid>/remove/<index>
+      # /remove/<uid>/<index>
       # e.g. http://music.example.com/GprIrgRs/remove/23
       # Respone: ok/err/auth/priv
       map "/remove" do
-        run Remove.new sp.playlist
+        run Remove.new sp, user_hash, command_privileges
       end
 
       # Request: /queue.xml, the ajax request from the browser
       # e.g http://music.example.com/queue.xml
       # See syntax.txt for xml-syntax
       map "/queue.xml" do
-        run Get_queue.new sp
+        run GetQueue.new sp, user_hash, command_privileges
       end
 
       # ! DOES NOT WORK !
       # /next, skips the current song and starts the next instead.
-      map "/next" do
-        run Next_song.new sp
+      map "/nexttrack" do
+        run NextTrack.new sp, user_hash, command_privileges
       end
 
       # /phone, sends a html5-page depending on your phone and resolution, the page pulls the xml-file with javascript.
@@ -75,8 +77,24 @@ class SpotiThin
 
       # /get, sends files back to the agent, such as css/javascript/images
       # e.g. http://music.example.com/get/css/main.css
-      map "/get" do
-        run Get_file.new
+      map "/getfile" do
+        run GetFile.new
+      end
+
+      # Request: /register, registers the client to the server
+      # /register/<username>/<android|ios|pc|other>/[key]
+      # e.g. http://music.example.com/register/thorn/android/muusic
+      # Response: command:register, response:ok|err, uid:<random-id>, role:<client|admin>
+      map "/register" do
+        run Register.new user_hash, command_privileges, char_map
+      end
+
+      # Request: /isreg, checks if the client is regstrated or not
+      # /isreg/<uid>
+      # e.g. http://music.example.com/isreg/0jA5Rwg1gNQ7h8Pc
+      # Response: command:isreg, response:ok|auth|err
+      map "/isreg" do
+        run IsReg.new user_hash
       end
       
       # / and /index.html, page with js that loads the xml-file.
@@ -86,75 +104,82 @@ class SpotiThin
       
     end
   end
-  
-  # Resource that reads a user and a sporify-uri, and adds this to the playlist of the play-server.
-  class Add_song
-    def initialize (sp)
+
+  # Superclass to all other webrequests, contains userchecks and initializer.
+  class WebRequest
+    def initialize (sp, user_hash, command_privileges)
       @sp = sp
+      @user_hash = user_hash
+      @command_privileges = command_privileges
     end
     
-    # TODO: remove some of the console-output
+    def can_call? (user_id, user_hash, command, command_privileges)
+      if user_hash[user_id].nil?
+        puts "User-ID " + user_id + " does not exist!"
+        return false
+      else
+        puts "\ncan_call?"
+        puts "User-ID: " + user_id
+        puts "Role: " + user_hash[user_id][:role]
+        puts "Command: " + command
+        puts "Privilege: " + command_privileges[command]
+        
+        return true
+      end
+    end
+  end
+
+  # Resource that reads a user and a sporify-uri, and adds this to the playlist of the play-server.
+  class AddTrack < WebRequest
     def call(env)
       rp = env["PATH_INFO"]
-      ip = env["REMOTE_ADDR"]
-      puts env["HTTP_USER_AGENT"]
-      puts "Addsong"
-      puts "rp: #{rp}"
-      user, track_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
-      puts "User: " + user
-      puts "IP: " + ip
-      puts "Track: " + track_uri
-      track = Hallon::Track.new(track_uri).load
-      @sp.add_to_playlist ({:track => track, :user => user, :ip => ip})
-      xml = {:command=>"add", :track=>track.name, :artist=>track.artist.name,
-        :album=>track.album.name, :user=>user}.to_xml
+      puts "\nAddTrack"
+      puts "Request: #{rp}"
+      user_id, track_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
+      puts "UID: " + user_id
+      puts "Track-URI: " + track_uri
+      if can_call? user_id, @user_hash, self.class.to_s.split(":").last, @command_privileges
+        track = Hallon::Track.new(track_uri).load
+        puts "Can call\n"
+        @sp.add_to_playlist ({:track => track, :user_id => user_id})
+        xml = {:command => "add", :result => "ok", :track=>track.name, :artist=>track.artist.name,
+          :album=>track.album.name}.to_xml(:root => "response")
+      else
+        puts "Can't call due to auth"
+        xml = {:command => "add", :response => "auth"}.to_xml(:root => "response")
+      end
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
 
-  class Next_song
-    def initialize (sp)
-      @sp = sp
-    end
+  class NextTrack < WebRequest
 
     def call(env)
       @sp.new_next
-      xml = {:command=>"next"}.to_xml
+      xml = {:command=>"next"}.to_xml(:root => "response")
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
 
-  class Add_album
-    
-    def initialize (sp)
-      @sp = sp
-    end
-    
-    # TODO: remove some of the console-output
+  class AddAlbum < WebRequest
     def call(env)
       rp = env["PATH_INFO"]
-      ip = env["REMOTE_ADDR"]
       puts env["HTTP_USER_AGENT"]
       puts "SptiThin.Thin.Add_album, rp: #{rp}"
       user, album_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
       puts "User: " + user
-      puts "IP: " + ip
       puts "Album: " + album_uri
-      albumBrowse = Hallon::Album.new(album_uri).browse.load
-      for track in albumBrowse.tracks
-        @sp.add_to_playlist ({:track => track, :user => user, :ip => ip})
+      album_browse = Hallon::Album.new(album_uri).browse.load
+      for track in album_browse.tracks
+        @sp.add_to_playlist ({:track => track, :user => user})
       end
       xml = {:command=>"add_album", :track=>track.name, :artist=>track.artist.name,
-        :album=>track.album.name, :user=>user}.to_xml
+        :album=>track.album.name, :user=>user}.to_xml(:root => "response")
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
   
-  class Playlist
-    def initialize (sp)
-      @sp = sp
-    end
-    
+  class Playlist < WebRequest
     def call(env)
       puts "SpotiThin.Thin.Playlist"
       rp = env["PATH_INFO"]
@@ -163,16 +188,12 @@ class SpotiThin
       puts "Playlist: " + playlist_uri
       playlist = Hallon::Playlist.new(playlist_uri).load
       @sp.set_playlist(playlist)
-      xml = {:command=>"playlist", :playlist=>playlist.name}.to_xml
+      xml = {:command=>"playlist", :playlist=>playlist.name}.to_xml(:root => "response")
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
 
-  class Remove
-    def initialize (playlist)
-      @playlist = playlist
-    end
-
+  class Remove < WebRequest
     def call(env)
       puts "SpotiThin.Thin.Remove"
       rp = env["PATH_INFO"]
@@ -180,41 +201,36 @@ class SpotiThin
       index = rp.match(/^\/(.*)/)[1]
       puts "Index: " + index
       @playlist[index.to_i][:status] = "removed"
-      xml = {:command=>"remove", :index=>index}.to_xml
+      xml = {:command=>"remove", :index=>index}.to_xml(:root => "response")
       [200, {'Content-Type'=>'text/xml'}, [xml]]
     end
   end
 
-  class Get_queue
-    def initialize (sp)
-      @sp = sp
-    end
-
+  class GetQueue < WebRequest
     def call(env)
-      xmlArray = []
+      xml_array = []
       @trunk = 5
       if (@sp.index < @trunk)
         @trunk = @sp.index
       end
       list = @sp.playlist.drop(@sp.index-@trunk).take(20)
-      list.take(20).each {|item| xmlArray.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
+      list.take(20).each {|item| xml_array.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
                                                       :album=>item[:track].album.name, :user=>item[:user],
                                                       :unit=>"N/A", :status=>item[:status]})}
-      xml = xmlArray.to_xml(:root => "item")
+      xml = xml_array.to_xml(:root => "item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
     end
   end
 
-  class Phone
+  class Phone 
     def call(env)
       agent = env["HTTP_USER_AGENT"]
-      # add some stuff here so we know what file to load
       html = File.open("web/clients/iphone5.html").read
       [200, {"Content-Type"=>"text/html"}, [html]]
     end
   end
 
-  class Get_file
+  class GetFile
     def call(env)
       rp = env["PATH_INFO"]
       file = File.open("web/" + rp).read
@@ -226,6 +242,59 @@ class SpotiThin
     def call(env)
       html = File.open("web/clients/fullhd.html").read
       [200, {"Content-Type"=>"text/html"}, [html]]
+    end
+  end
+
+  class Register
+    def initialize (user_hash, priv_hash, char_map)
+      @user_hash = user_hash
+      @priv_hash = priv_hash
+      @char_map = char_map
+    end
+    
+    def call(env)
+      rp = env["PATH_INFO"]
+      username, device, key = rp.split("/")[1..-1]
+      puts username, device, key
+      xml = {:command => self.class.to_s.split(":").last}
+      if @priv_hash["clientkey"].empty? or @priv_hash["clientkey"] == key
+        puts "client " + @priv_hash["clientkey"]
+        xml[:user_id] = (0...16).map{@char_map[rand(@char_map.length)]}.join      
+        xml[:role] = "client"
+        xml[:result] = "ok"
+      end
+
+      if @priv_hash["adminkey"] == key
+        puts "admin " + @priv_hash["adminkey"]
+        xml[:user_id] = (0...16).map{@char_map[rand(@char_map.length)]}.join      
+        xml[:role] = "admin"
+        xml[:result] = "ok"
+      elsif xml[:result] != "ok"
+        xml[:result] = "auth"
+      end
+
+      @user_hash[xml[:user_id]] = {username: username, device: device, role: xml[:role], time: Time.new} if xml[:result] == "ok"
+      puts @user_hash
+      [200, {"Content-Type"=>"text/xml"}, [xml.to_xml(:root => "response")]]
+    end
+  end
+
+  class IsReg
+    def initialize (user_hash)
+      @user_hash = user_hash
+    end
+    
+    def call(env)
+      rp = env["PATH_INFO"]
+      uid = rp.split("/")[1..-1].first
+      xml = {:command => self.class.to_s.split(":").last}
+      if @user_hash[uid].nil?
+        xml[:result] = "auth"
+      else
+        @user_hash[uid][:time] = Time.new
+        xml[:result] = "ok"
+      end
+      [200, {"Content-Type"=>"text/xml"}, [xml.to_xml(:root => "response")]]
     end
   end
 

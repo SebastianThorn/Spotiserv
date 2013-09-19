@@ -5,12 +5,13 @@ require "hallon"
 require "hallon-openal"
 
 class SpotiPlay
-  attr_accessor :player, :playlist, :playing, :external_playlist, :local_playlist
+  attr_accessor :player, :playlist, :index, :playing, :external_playlist, :local_playlist
 
   def initialize (username, password)
     # Setting up variables
     self.playing = false
     self.playlist = []
+    self.index = 0
     self.local_playlist = Time.new.strftime('%Y-%m-%d.txt')
     self.external_playlist = nil
     
@@ -60,10 +61,12 @@ class SpotiPlay
   #TODO: INFO, Remove console output
   def p_play (track)
     Thread.new {
+      
       puts "Playing: #{track.name} by #{track.artist.name}"
+      self.playlist[index][:status] = "playing"
       self.player.play!(track)
       puts "Song ended: #{track.name} by #{track.artist.name}"
-      self.playlist.shift
+      self.playlist[index][:status] = "done"
       if self.playlist.empty?
         puts "No more songs in playlist, trying to open external playlist"
         unless self.external_playlist.nil?
@@ -75,9 +78,28 @@ class SpotiPlay
         self.player.stop
       else
         puts "Starting nex song"
-        self.p_play (self.playlist.first[:track])
+        new_next
       end
     }
+  end
+
+  def new_next
+    self.playlist[index][:status] = "done"
+    puts "#{self.index}/#{self.playlist.size}"
+    puts "index ++"
+    self.index += 1
+    puts "#{self.index}/#{self.playlist.size}"
+    while self.index != self.playlist.size and self.playlist[index][:status] == "removed"
+      puts "removed, index ++"
+      self.index += 1
+    end
+    puts "#{self.index}/#{self.playlist.size}"
+    unless self.index == self.playlist.size
+      self.p_play (self.playlist[self.index][:track])
+    else
+      puts "no more tracks in playlist, stopping playback"
+      self.playing = false
+    end
   end
 
   # Play the next song in the playlist
@@ -99,13 +121,8 @@ class SpotiPlay
 
   def set_playlist (playlist = null)
     puts "Spotithin.set_playlist"
-    if playlist
-      self.playing = true
-      self.external_playlist = playlist
-      self.p_play (self.external_playlist.tracks[rand(self.external_playlist.tracks.size)])
-    else
-      self.playing = false
-    end
+    self.external_playlist = playlist
+    #self.p_play (self.external_playlist.tracks[rand(self.external_playlist.tracks.size)])
   end
 
   def p_pause
@@ -129,13 +146,14 @@ class SpotiPlay
   
   # Adds a track to the current playlist, takes a hash. {:track=>Hallon::Track, :user=>String}
   def add_to_playlist (item)
+    item[:status] = "queued"
     self.playlist.push (item)
     "Added #{item[:track].name} to the playlist!"
     File.open("tmp/" + self.local_playlist, "a") do |f|
       f.write (item[:track].name + " - " +  item[:track].artist.name + "\n")
     end
     unless self.player.status == :playing
-      self.p_play (self.playlist.first[:track])
+      self.p_play (self.playlist[self.index][:track])
     end
   end
 
