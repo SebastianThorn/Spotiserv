@@ -21,28 +21,50 @@ ensure
   end
 end
 
-# Setup connection-variables
-ip = Socket.ip_address_list[1].ip_address
-port = 8001
-
 # Read config-file
-unless ARGV[0]
-  puts "missing config-file, exiting"
-  exit
-end
+unless ARGV[0] then puts "missing config-file, exiting"; exit end
 config = ParseConfig.new(ARGV[0])
-spotify_username = config["username"]
-spotify_password = config["password"]
 
 # Setup variables
+ip = Socket.ip_address_list[1].ip_address
+port = config["port"]
+priv_hash = Hash.new
+priv = %w[AddTrack next-track add-album set-playlist remove-track]
+["clientkey", "adminkey"].each {|cmd| priv_hash[cmd] = config[cmd]}
+priv.each {|cmd| if config[cmd] == "admin" then priv_hash[cmd] = 1 elsif config[cmd] == "client" then priv_hash[cmd] = 0 end}
+spotify_username = config["username"]
+spotify_password = config["password"]
 spotify_username = prompt("Please enter your spotify username") if spotify_username.empty?
 spotify_password = prompt("Please enter your spotify password", hide: true) if spotify_password.empty?
 spotify_territory = Geocoder.search(open("http://whatismyip.akamai.com").read)[0].country_code
+user_hash = Hash.new
+play_server = SpotiPlay.new(spotify_username, spotify_password)
 
-# Start player-server
-sp = SpotiPlay.new(spotify_username, spotify_password)
-puts "Territorry: #{spotify_territory}"
-puts "Spotiplay.new done"
+# Start fork to check if user is still active, remove user if inactive
+Thread.new {
+  loop do
+    del = []
+    user_hash.each do |user_id, user_data|
+      if user_data[:time] < (Time.new - 15.minute)
+        del.push(user_id)
+      end
+    end
+    for user_id in del
 
-# Start web-sever
-st = SpotiThin.new(ip, port, sp)
+      for track in play_server.playlist
+        if track[:user_id] == user_id
+          track[:user_id] = "false"
+        end
+      end
+
+      user_hash.delete(user_id)
+
+    end
+    sleep 30
+    #user_hash.delete_if {|user_id, user_data| user_data[:time] < (Time.new - 1.minute)}; sleep 10 # set 10min/60sec 
+  end
+}
+
+# Start servers
+
+web_erver = SpotiThin.new(ip, port, play_server, priv_hash, user_hash)

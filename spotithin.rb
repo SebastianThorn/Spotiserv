@@ -115,15 +115,9 @@ class SpotiThin
     
     def can_call? (user_id, user_hash, command, command_privileges)
       if user_hash[user_id].nil?
-        puts "User-ID " + user_id + " does not exist!"
         return false
       else
-        puts "\ncan_call?"
-        puts "User-ID: " + user_id
-        puts "Role: " + user_hash[user_id][:role]
-        puts "Command: " + command
-        puts "Privilege: " + command_privileges[command]
-        
+        user_hash[user_id][:time] = Time.new
         return true
       end
     end
@@ -141,7 +135,7 @@ class SpotiThin
       if can_call? user_id, @user_hash, self.class.to_s.split(":").last, @command_privileges
         track = Hallon::Track.new(track_uri).load
         puts "Can call\n"
-        @sp.add_to_playlist ({:track => track, :user_id => user_id})
+        @sp.add_to_playlist ({:track => track, :user_id => user_id, :username => @user_hash[user_id][:username]})
         xml = {:command => "add", :result => "ok", :track=>track.name, :artist=>track.artist.name,
           :album=>track.album.name}.to_xml(:root => "response")
       else
@@ -209,15 +203,18 @@ class SpotiThin
   class GetQueue < WebRequest
     def call(env)
       xml_array = []
-      @trunk = 5
+      @trunk = 3
       if (@sp.index < @trunk)
         @trunk = @sp.index
       end
       list = @sp.playlist.drop(@sp.index-@trunk).take(20)
-      list.take(20).each {|item| xml_array.push({ :artist=>item[:track].artist.name, :song=>item[:track].name,
-                                                      :album=>item[:track].album.name, :user=>item[:user],
-                                                      :unit=>"N/A", :status=>item[:status]})}
-      xml = xml_array.to_xml(:root => "item")
+      puts list
+      list.take(20).each do |item|
+        xml_array.push({ :artist => item[:track].artist.name, :song => item[:track].name,
+                         :album => item[:track].album.name, :status => item[:status],
+                         :username => item[:username], :user_id => item[:user_id]})
+      end
+      xml = xml_array.to_xml(:root => "root").gsub(" <root", " <item").gsub(" </root", " </item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
     end
   end
@@ -255,17 +252,14 @@ class SpotiThin
     def call(env)
       rp = env["PATH_INFO"]
       username, device, key = rp.split("/")[1..-1]
-      puts username, device, key
       xml = {:command => self.class.to_s.split(":").last}
       if @priv_hash["clientkey"].empty? or @priv_hash["clientkey"] == key
-        puts "client " + @priv_hash["clientkey"]
         xml[:user_id] = (0...16).map{@char_map[rand(@char_map.length)]}.join      
         xml[:role] = "client"
         xml[:result] = "ok"
       end
 
       if @priv_hash["adminkey"] == key
-        puts "admin " + @priv_hash["adminkey"]
         xml[:user_id] = (0...16).map{@char_map[rand(@char_map.length)]}.join      
         xml[:role] = "admin"
         xml[:result] = "ok"
@@ -274,7 +268,6 @@ class SpotiThin
       end
 
       @user_hash[xml[:user_id]] = {username: username, device: device, role: xml[:role], time: Time.new} if xml[:result] == "ok"
-      puts @user_hash
       [200, {"Content-Type"=>"text/xml"}, [xml.to_xml(:root => "response")]]
     end
   end
