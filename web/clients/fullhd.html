@@ -25,7 +25,7 @@
 	}
 	xmlhttp.onreadystatechange=function() {
 	    if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-		txt="<table><tr><th>Artist</th><th>Track</th><th>Album</th><th>Name</th></tr>";
+		txt="<table><tr><th>Artist</th><th>Track</th><th>Album</th><th>Queued By</th></tr>";
 		x=xmlhttp.responseXML.documentElement.getElementsByTagName("item");
 		for (i=0;i<x.length;i++) {
 		    if (x[i].getElementsByTagName("status")[0].firstChild.nodeValue == "done")
