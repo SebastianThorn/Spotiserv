@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>webbapp</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link href='http://fonts.googleapis.com/css?family=Merriweather+Sans:400,700,800' rel='stylesheet' type='text/css'>
+    <style>
+      body {background-color:white; font-family: 'Merriweather Sans', sans-serif; font-weight: 700; font-size:75%; witdh:240px;}
+      h1 {font-family: 'Merriweather Sans', sans-serif; font-weight: 800; font-size:300%;}
+      table {border-collapse:collapse;width:100%}
+      th, td {border: 2px solid #98bf21; padding:3px 7px 2px 7px;}
+      th {text-align:center; padding-top:5px; padding-bottom:4px; background-color:#A7C942; color:#ffffff;}
+      tr.alt td{color:#000000; background-color:#EAF2D3;}
+      tr.done td{color:#B0B0B0;}
+      tr.removed td{color:#FF0033;}
+    </style>
+    <script>
+function send_next()
+{
+    var request = "http://" + window.location.host + "/next";
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", request, true);
+    xhr.send();
+    document.getElementById("request_box").value = request
+}
+
+function search_song()
+{
+    var query = document.getElementById("search_box").value
+    var request = "http://ws.spotify.com/search/1/track?q=" + query
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", request, false);
+    xhr.send(null);
+    var tracks = xhr.responseXML.documentElement.getElementsByTagName("track")
+    var tableHtml = "<table><tbody>";
+
+    for (i=0;i<tracks.length;i++) {
+	names = tracks[i].getElementsByTagName("name");
+	console.debug(tracks[i].getAttribute("href"));
+	if (i%2 == 1)
+	    tableHtml = tableHtml + "<tr>";
+	else
+	    tableHtml = tableHtml + "<tr class='alt'>";
+	tableHtml = tableHtml + "<a href='#' onclick=queue_song('" + tracks[i].getAttribute("href") + "')><td>"
+	tableHtml = tableHtml + names[0].firstChild.nodeValue + " - " + names[1].firstChild.nodeValue + ", " + names[2].firstChild.nodeValue;
+	tableHtml = tableHtml + "</a></td></tr>";
+    }
+    tableHtml = tableHtml + "</tbody></table>";
+    document.getElementById("search_table").innerHTML=tableHtml;
+    document.getElementById("request_box").value = request
+}
+
+function queue_song(spotify_uri)
+{
+    var request = "http://" + window.location.host + "/add/" + document.getElementById("name_box").value + "/" + spotify_uri;
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", request, true);
+    xhr.send();
+    document.getElementById("request_box").value = request
+}
+    </script>
+
+  </head>
+
+  <body>
+    <input type="text" id="name_box" value="sebastian"/>
+    <input type="text" id="search_box"/><button id="search_button" onclick="search_song()">search</button><br/>
+    <button id="next_button" onclick="send_next()">next song</button><input type="text" id="request_box" size="100"/><br/>
+    <button id="queue_button" onclick="queue_song('spotify:track:5tmMkyCn42ogQ0RGB01idw')">queue song</button>
+    <hr/>
+    <div id="search_table"></div>
+  </body>
+</html>
