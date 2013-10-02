@@ -106,16 +106,21 @@ class SpotiThin
     end
   end
 
+  # Superclass to all other webrequests, contains a logger, just run 'log(env)' to print a log-message with timestamp to the terminal.
   class WebLog
     def log(env)
-      rm = env.fetch("REQUEST_METHOD")
-      rp = env.fetch("REQUEST_PATH")
-      addr = env.fetch("REMOTE_ADDR")
-      puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} #{self.class.to_s} [#{addr} #{rm} #{rp}]"
+      if env.class == Hash
+        rm = env.fetch("REQUEST_METHOD")
+        rp = env.fetch("REQUEST_PATH")
+        addr = env.fetch("REMOTE_ADDR")
+        puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} #{self.class.to_s} [#{addr} #{rm} #{rp}]"
+      elsif env.class == String
+        puts env
+      end
     end
   end
 
-  # Superclass to all other webrequests, contains userchecks and initializer.
+  # Superclass to most other webrequests, contains userchecks and initializer.
   class WebRequest < WebLog
     def initialize (sp, user_hash, command_privileges)
       @sp = sp
