@@ -36,7 +36,11 @@ spotify_username = config["username"]
 spotify_password = config["password"]
 spotify_username = prompt("Please enter your spotify username") if spotify_username.empty?
 spotify_password = prompt("Please enter your spotify password", hide: true) if spotify_password.empty?
-spotify_territory = Geocoder.search(open("http://whatismyip.akamai.com").read)[0].country_code
+begin
+  spotify_territory = Geocoder.search(open("http://whatismyip.akamai.com").read)[0].country_code
+rescue SocketError => ex
+  abort "[LOG] #{Time.now.strftime "[%d/%b/%Y %H:%M:%S.%L]"} E [#{ex.class}] Can not find a connection to the internet."
+end
 user_hash = Hash.new
 play_server = SpotiPlay.new(spotify_username, spotify_password)
 
