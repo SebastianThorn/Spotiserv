@@ -1,6 +1,8 @@
 Spotiserv
 =========
 
+Most of this information is out-of-date, but the code should run smooth.
+
 Hello, and welcome to Spotiserv.
 
 ![Alt text](http://i.imgur.com/1Zlw0sK.png "Optional title")
