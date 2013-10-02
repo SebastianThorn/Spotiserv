@@ -18,8 +18,9 @@ class SpotiThin
     # Registrates the resources for the web-server
     # All commands will be responded with an xml-file with information if they were a success or not.
     Thin::Server.start(ip, port) do
-      use Rack::CommonLogger
-      
+      #use Rack::CommonLogger
+      #set :logging, false
+
       # Request: /add, to add a song to the playlist
       # /add/<uid>/<spotify-uri>
       # e.g. http://music.example.com/HXaIBXjI/add/spotify:track:2OcieDHRpksQQpIuQCOwPs
@@ -105,8 +106,17 @@ class SpotiThin
     end
   end
 
+  class WebLog
+    def log(env)
+      rm = env.fetch("REQUEST_METHOD")
+      rp = env.fetch("REQUEST_PATH")
+      addr = env.fetch("REMOTE_ADDR")
+      puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} #{self.class.to_s} [#{addr} #{rm} #{rp}]"
+    end
+  end
+
   # Superclass to all other webrequests, contains userchecks and initializer.
-  class WebRequest
+  class WebRequest < WebLog
     def initialize (sp, user_hash, command_privileges)
       @sp = sp
       @user_hash = user_hash
@@ -242,7 +252,7 @@ class SpotiThin
     end
   end
 
-  class Register
+  class Register < WebLog
     def initialize (user_hash, priv_hash, char_map)
       @user_hash = user_hash
       @priv_hash = priv_hash
@@ -250,6 +260,7 @@ class SpotiThin
     end
     
     def call(env)
+      log(env)
       rp = env["PATH_INFO"]
       username, device, key = rp.split("/")[1..-1]
       xml = {:command => self.class.to_s.split(":").last}
