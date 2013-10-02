@@ -97,10 +97,20 @@ class SpotiThin
       map "/isreg" do
         run IsReg.new user_hash
       end
+
+      # Dark theme for fullhd monitors
+      map "/dark" do
+        run Dark.new
+      end
+      
+      # Light theme for fullhd monitors
+      map "/light" do
+        run Light.new
+      end
       
       # / and /index.html, page with js that loads the xml-file.
       map "/" do
-        run Index.new
+        run Dark.new
       end
       
     end
@@ -113,9 +123,9 @@ class SpotiThin
         rm = env.fetch("REQUEST_METHOD")
         rp = env.fetch("REQUEST_PATH")
         addr = env.fetch("REMOTE_ADDR")
-        puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} #{self.class.to_s} [#{addr} #{rm} #{rp}]"
+        puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} I #{self.class.to_s} [#{addr} #{rm} #{rp}]"
       elsif env.class == String
-        puts env
+        puts "[LOG] #{Time.new.strftime "[%d/%b/%Y %H:%M:%S.%L]"} I #{self.class.to_s} env"
       end
     end
   end
@@ -250,9 +260,16 @@ class SpotiThin
     end
   end
 
-  class Index
+  class Dark
     def call(env)
-      html = File.open("web/clients/fullhd.html").read
+      html = File.open("web/clients/dark-fullhd.html").read
+      [200, {"Content-Type"=>"text/html"}, [html]]
+    end
+  end
+
+  class Light
+    def call(env)
+      html = File.open("web/clients/light-fullhd.html").read
       [200, {"Content-Type"=>"text/html"}, [html]]
     end
   end
