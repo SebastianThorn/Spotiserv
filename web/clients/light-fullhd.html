@@ -5,15 +5,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link href='http://fonts.googleapis.com/css?family=Merriweather+Sans:400,700,800' rel='stylesheet' type='text/css'>
     <style>
-      body {background-color:black; font-family: 'Merriweather Sans', sans-serif; font-weight: 700; font-size:175%; color:gray;}
-      h1 {color:white;font-family: 'Merriweather Sans', sans-serif; font-weight: 800; font-size:300%;}
+      body {background-color:white; font-family: 'Merriweather Sans', sans-serif; font-weight: 700; font-size:175%;}
+      h1 {font-family: 'Merriweather Sans', sans-serif; font-weight: 800; font-size:300%;}
       table {border-collapse:collapse;width:100%}
-      th, td {border: 2px solid gray; padding:3px 7px 2px 7px;}
-      th {text-align:center; padding-top:5px; padding-bottom:4px; background-color:green; color:white;}
-      tr.alt td{color:gray; background-color:#202020;}
-      tr.done td{color:#505050;}
+      th, td {border: 2px solid #98bf21; padding:3px 7px 2px 7px;}
+      th {text-align:center; padding-top:5px; padding-bottom:4px; background-color:#A7C942; color:#ffffff;}
+      tr.alt td{color:#000000; background-color:#EAF2D3;}
+      tr.done td{color:#B0B0B0;}
       tr.removed td{color:#FF0033;}
-      tr.playing td{color:green;}
     </style>
     <script>
     function loadQueues() {
@@ -33,8 +32,6 @@
 			txt=txt + "<tr class='done'>";
 		    else if (x[i].getElementsByTagName("status")[0].firstChild.nodeValue == "removed")
 			txt=txt + "<tr class='removed'>";
-		    else if (x[i].getElementsByTagName("status")[0].firstChild.nodeValue == "playing")
-			txt=txt + "<tr class='playing'>";
 		    else if (i%2 == 1)
 			txt=txt + "<tr>";
 		    else
