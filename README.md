@@ -1,12 +1,15 @@
 Spotiserv
 =========
 
-Most of this information is out-of-date, but the code should run smooth.
+Welcome to Spotiserv, a music-server that stream music from spotify.
 
-Hello, and welcome to Spotiserv.
+Here is an old image of how it used to look with the standard theme, witch now is called "light".
+![Alt text](http://i.imgur.com/1Zlw0sK.png "Old image")
 
-![Alt text](http://i.imgur.com/1Zlw0sK.png "Optional title")
-
+Currently there is only a couple of smooth ways to use use and the server. (not really smooth as all, but they will be)
+  * The built in iphone html5/js page, tho this needs to be updates to work with the new registation functionallity.
+  * The app that is really buggy and therefore does not yet exist on play-store.
+  * A web-browser and copy-pasting the registration-key and spotify-uri.
 
 You will need a couple of things to make this work proper:
   * A Premium Spotify-account
@@ -14,10 +17,7 @@ You will need a couple of things to make this work proper:
 
 And that is it, now you are good to go!
 
-This is a spotify-server that plays music from spotify by adding them to a temporary playlist.
-Anyone that is connected to the network can send spotify-uri's to the server and have them added
-to a temporary playlist that the server will play from, if you have any problems of ideas to the
-server, don't hasitate to contact me on github and I will add them to the server.
+If you have any problems or ideas to the server, don't hasitate to contact me on github and I will try to fix them.
 
 The real purpose for this is at pre-parties (förfest in swedish) when you really dont have a good
 way of playing music together, you either just have someone occupying a computer chair all evening.
@@ -25,21 +25,22 @@ way of playing music together, you either just have someone occupying a computer
 Spotiserv is made of different pieces:
   * The software that plays music, hallon and hallon-openal: https://github.com/Burgestrand/Hallon
   * The software that allows others to queue song, thin: https://github.com/macournoyer/thin
-  * I'v been using pry alot to debug, so would like to give credit where credit is due, pry: https://github.com/pry/pry
+  * I'v been using pry alot to debug, so would like to give some credit here, pry: https://github.com/pry/pry
 
 I have only mashed up these to create a server, Spotiserv: https://github.com/SebastianThorn/Spotiserv
-To start the server, simply type './start' in a linux console that have ruby, libspotify and the required gems.
 
-The server anwsers to the following HTTP-GET requests:
-  * `/add/<USER>/<SPOTIFY-TRACK-URI>` Returns an xml-file if successful, and adds the track to the URI to the playlist.
-  * example: `192.168.0.189:8001/add/Sebastian/spotify:track:648j5ND8kMFMYXUGMWs5KP`
-  * `/` Returns an html-page that renders the playlist into a table and populates it with the data from `/queue.xml`
-  * `/queue.xml` Returns the current playlist as an xml-file
-  * `/next` Returns an xml-file if successful, and changes the current track to the next in the playlist.
+And this is how you run Spotiserv
+---------------------------------
+  * `git clone https://github.com/SebastianThorn/Spotiserv.git`
+  * `cd Spotiserv`
+  * `bundle install`
+  * `chmod x+u start.rb`
+  * Get an application-key from Spotify, then place it in the current directory
+  * `./start.rb spotiserv.conf` and supply username and password if you didn't write them in spotiserv.conf
+  * Start adding music and enjoy!
 
-
-How to run on RPi, raspberrian (Soft-float!)
-============================================
+How to run on RPi, raspberrian (not sure if this longer works)
+--------------------------------------------------------------
   * sudo apt-get update
   * sudo apt-get upgrade
   * sudo apt-get install ruby1.9.1-dev git-core libopenal-dev
@@ -53,25 +54,3 @@ How to run on RPi, raspberrian (Soft-float!)
   * cd Git/
   * git clone https://github.com/SebastianThorn/Spotiserv.git
   * cd Spotiserv/
-
-Now you need to download the key-file from spotify, you can get it here: http://developer.spotify.com/technologies/libspotify/
-
-Place it in ~/Git/Spotiserv/ Now you should be good to go with the server on a RPi running Raspbian.
-
-`./start.rb [<username> [<password>]]`
-
-Now it's time to play some good music!
-
-`http://<IP:PORT>/add/Sebastian/spotify:track:6bOTe8T116DNpwp2H6Hxgh`
-
-TODO's
-======
-  * Add some sort of pause/play-toogle to the webserver
-  * Comment the code
-  * Add a Gemfile
-
-Known Issues
-==========
-  * While running this on RPi, you might have some playback issues, and might stop at some times.
-  * There seems to be aome issues with spotify-accounts linked to facebook (needs verification).
-  * IE will cache the xml-file, and therefore wont display the playlist at the index-page.
