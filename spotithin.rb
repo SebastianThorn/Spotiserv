@@ -21,9 +21,9 @@ class SpotiThin
       #use Rack::CommonLogger
       #set :logging, false
 
-      # Request: /add, to add a song to the playlist
-      # /add/<uid>/<spotify-uri>
-      # e.g. http://music.example.com/HXaIBXjI/add/spotify:track:2OcieDHRpksQQpIuQCOwPs
+      # Request: /addtrack, to add a song to the playlist
+      # /addtrack/<uid>/<spotify-uri>
+      # e.g. http://music.example.com/HXaIBXjI/addtrack/spotify:track:2OcieDHRpksQQpIuQCOwPs
       # Response: ok/err/auth/priv
       map "/addtrack" do
         run AddTrack.new sp, user_hash, command_privileges
@@ -152,6 +152,7 @@ class SpotiThin
   class AddTrack < WebRequest
     def call(env)
       rp = env["PATH_INFO"]
+      url = "https://embed.spotify.com/oembed/?url="
       puts "\nAddTrack"
       puts "Request: #{rp}"
       user_id, track_uri = rp.match(/^\/(\w*)\/(.*)/)[1..2]
@@ -160,7 +161,9 @@ class SpotiThin
       if can_call? user_id, @user_hash, self.class.to_s.split(":").last, @command_privileges
         track = Hallon::Track.new(track_uri).load
         puts "Can call\n"
-        @sp.add_to_playlist ({:track => track, :user_id => user_id, :username => @user_hash[user_id][:username]})
+        @sp.add_to_playlist ({ :track => track, :user_id => user_id, :username => @user_hash[user_id][:username],
+                               :art => JSON.parse(Net::HTTP.get_response(URI.parse(url+track_uri)).body)["thumbnail_url"]})
+        puts track.inspect
         xml = {:command => "add", :result => "ok", :track=>track.name, :artist=>track.artist.name,
           :album=>track.album.name}.to_xml(:root => "response")
       else
@@ -233,11 +236,10 @@ class SpotiThin
         @trunk = @sp.index
       end
       list = @sp.playlist.drop(@sp.index-@trunk).take(20)
-      puts list
       list.take(20).each do |item|
         xml_array.push({ :artist => item[:track].artist.name, :song => item[:track].name,
                          :album => item[:track].album.name, :status => item[:status],
-                         :username => item[:username], :user_id => item[:user_id]})
+                         :username => item[:username], :user_id => item[:user_id], :art => item[:art]})
       end
       xml = xml_array.to_xml(:root => "root").gsub(" <root", " <item").gsub(" </root", " </item")
       [200, {"Content-Type"=>"text/xml"}, [xml]]
