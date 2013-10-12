@@ -31,8 +31,8 @@ class SpotiThin
       
       # ! NOT IMPLEMENTED YET !
       # Request: /add_album, to add an entire album to the playlist
-      # /add_album/<uid>/<spotify-uri>
-      # e.g. http://music.example.com/jimmQEEp/add_album/spotify:album:4UjcMSiyv8QCiZ4O8gpzXS
+      # /addalbum/<uid>/<spotify-uri>
+      # e.g. http://music.example.com/jimmQEEp/addalbum/spotify:album:4UjcMSiyv8QCiZ4O8gpzXS
       # Response: ok/err/auth/priv
       map "/addalbum" do
         run AddAlbum.new sp, user_hash, command_privileges
